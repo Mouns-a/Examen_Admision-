@@ -5,7 +5,7 @@ export default function Finalizado() {
   return (
     <main className="examen">
       <h1>{r?.cancelado ? "Examen cancelado" : "Examen enviado"}</h1>
-      {r?.cancelado && <p>Se canceló por salir del examen en repetidas ocasiones.</p>}
+      {r?.cancelado && <p>Tu examen fue cancelado.</p>}
       {r && !r.cancelado && <p>Demo: {r.aciertos} de {r.total} correctas.</p>}
       <p>Eventos registrados: {obtenerEventos().length}</p>
     </main>

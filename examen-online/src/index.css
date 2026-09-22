@@ -16,3 +16,43 @@ body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; }
 .examen button { padding: 0.7rem; font-size: 1rem; cursor: pointer; }.examen { user-select: none; }
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10; }
 .overlay-caja { background: #fff; padding: 2rem; border-radius: 12px; max-width: 420px; display: flex; flex-direction: column; gap: 1rem; }
+.inspector { max-width: 900px; margin: 3vh auto; padding: 0 1rem; }
+.tarjeta { background: #fff; border-radius: 10px; padding: 1rem; margin-bottom: 0.7rem; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #9ca3af; }
+.tarjeta.bloqueado { border-left-color: #c0392b; }
+.tarjeta.autorizado { border-left-color: #f59e0b; }
+.tarjeta.en_examen { border-left-color: #16a34a; }
+.tarjeta button { margin-left: 0.4rem; padding: 0.5rem 0.8rem; cursor: pointer; }
+.inspector { max-width: 1200px; }
+.insp-cab { display: flex; justify-content: space-between; align-items: baseline; }
+.resumen { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.insp-cuerpo { display: flex; gap: 1rem; align-items: flex-start; }
+.rejilla { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
+.mini { display: flex; flex-direction: column; gap: 0.2rem; text-align: left; padding: 0.4rem; background: #fff; border: 1px solid #ddd; border-left: 6px solid #9ca3af; border-radius: 8px; cursor: pointer; }
+.mini.bloqueado { border-left-color: #c0392b; }
+.mini.autorizado { border-left-color: #f59e0b; }
+.mini.en_examen { border-left-color: #16a34a; }
+.mini.sel { outline: 3px solid #2563eb; }
+.mini img, .sinfoto { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: #e5e7eb; }
+.sinfoto { display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 0.8rem; }
+.detalle { width: 320px; background: #fff; border-radius: 12px; padding: 1rem; position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.detalle img { width: 100%; border-radius: 8px; }
+.detalle ul { max-height: 30vh; overflow-y: auto; padding-left: 1.1rem; margin: 0; }
+.acciones { display: flex; gap: 0.4rem; }
+.acciones button { flex: 1; padding: 0.6rem; cursor: pointer; }.examen-layout { display: flex; gap: 1rem; max-width: 1000px; margin: 3vh auto; padding: 0 1rem; align-items: flex-start; }
+.examen-layout .examen { flex: 1; margin: 0; }
+.panel { width: 260px; background: #fff; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; position: sticky; top: 1rem; }
+.cuadricula { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; max-height: 50vh; overflow-y: auto; }
+.cuadricula button { padding: 0.3rem 0; font-size: 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
+.cuadricula .resp { background: #d1fae5; }
+.cuadricula .marca { background: #fde68a; }
+.cuadricula .actual { border: 2px solid #2563eb; }
+.panel .final { padding: 0.7rem; font-size: 1rem; cursor: pointer; }
+.botones { display: flex; gap: 0.5rem; }
+.botones button { flex: 1; }
+.overlay { background: #111; }
+.prueba-equipo { max-width: 640px; margin: 3vh auto; padding: 2rem; background: #fff; border-radius: 12px; }
+.prueba-equipo section { padding: 1rem 0; border-bottom: 1px solid #eee; }
+.prueba-equipo video { width: 240px; border-radius: 8px; background: #000; }
+.medidor { width: 100%; height: 10px; background: #eee; border-radius: 6px; overflow: hidden; margin-top: 0.4rem; }
+.medidor div { height: 100%; background: #16a34a; transition: width 0.1s; }
+.prueba-equipo .final { margin-top: 1rem; padding: 0.8rem; width: 100%; font-size: 1rem; cursor: pointer; }

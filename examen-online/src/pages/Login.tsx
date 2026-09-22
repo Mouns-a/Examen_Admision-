@@ -1,40 +1,54 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { iniciarSesion, verificarCodigo } from "../services/auth";
+import { iniciarSesion } from "../services/auth";
+import { iniciarSesionSupervisor } from "../services/supervisores";
+
+const MAX_INTENTOS = 5;
+const BLOQUEO_MS = 60000;
 
 export default function Login() {
   const navigate = useNavigate();
-  const [etapa, setEtapa] = useState<"credenciales" | "codigo">("credenciales");
-  const [correo, setCorreo] = useState("");
-  const [password, setPassword] = useState("");
-  const [codigo, setCodigo] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [clave, setClave] = useState(""); // fecha de nacimiento (aspirante) o contraseña (supervisor)
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [intentos, setIntentos] = useState(0);
+  const [bloqueadoHasta, setBloqueadoHasta] = useState(0);
 
-  async function enviarCredenciales(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setCargando(true);
-    try {
-      await iniciarSesion(correo, password);
-      setEtapa("codigo");
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setCargando(false);
+  const esCorreo = usuario.includes("@");
+  const bloqueado = () => Date.now() < bloqueadoHasta;
+
+  function registrarFallo(mensaje: string) {
+    const n = intentos + 1;
+    if (n >= MAX_INTENTOS) {
+      setIntentos(0);
+      setBloqueadoHasta(Date.now() + BLOQUEO_MS);
+      setError("Demasiados intentos. Espera un minuto para volver a intentar.");
+    } else {
+      setIntentos(n);
+      setError(mensaje);
     }
   }
 
-  async function enviarCodigo(e: FormEvent) {
+  async function enviar(e: FormEvent) {
     e.preventDefault();
+    if (bloqueado()) {
+      setError("Espera un momento antes de volver a intentar.");
+      return;
+    }
     setError("");
     setCargando(true);
     try {
-      await verificarCodigo(correo, codigo);
-      navigate("/verificacion");
+      if (usuario.includes("@")) {
+        await iniciarSesionSupervisor(usuario, clave);
+        navigate("/inspector");
+      } else {
+        await iniciarSesion(usuario, clave);
+        navigate("/prueba-equipo");
+      }
     } catch (err) {
-      setError((err as Error).message);
+      registrarFallo((err as Error).message);
     } finally {
       setCargando(false);
     }
@@ -43,29 +57,18 @@ export default function Login() {
   return (
     <main className="login">
       <h1>Examen en línea</h1>
-
-      {etapa === "credenciales" ? (
-        <form onSubmit={enviarCredenciales}>
-          <label>Correo institucional</label>
-          <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
-          <label>Contraseña</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <button disabled={cargando}>{cargando ? "Verificando..." : "Continuar"}</button>
-        </form>
-      ) : (
-        <form onSubmit={enviarCodigo}>
-          <p>Ingresa el código de 6 dígitos enviado a tu correo.</p>
-          <input
-            inputMode="numeric"
-            maxLength={6}
-            value={codigo}
-            onChange={(e) => setCodigo(e.target.value)}
-            required
-          />
-          <button disabled={cargando}>{cargando ? "Verificando..." : "Entrar"}</button>
-        </form>
-      )}
-
+      <form onSubmit={enviar}>
+        <label>ID de aspirante o correo de supervisor</label>
+        <input value={usuario} onChange={(e) => setUsuario(e.target.value)} required />
+        <label>{esCorreo ? "Contraseña" : "Fecha de nacimiento"}</label>
+        <input
+          type={esCorreo ? "password" : "date"}
+          value={clave}
+          onChange={(e) => setClave(e.target.value)}
+          required
+        />
+        <button disabled={cargando}>{cargando ? "Verificando..." : "Continuar"}</button>
+      </form>
       {error && <p className="error">{error}</p>}
     </main>
   );

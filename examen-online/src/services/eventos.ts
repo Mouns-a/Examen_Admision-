@@ -3,7 +3,7 @@ export interface Evento {
   t: string; // fecha y hora ISO
 }
 
-const eventos: Evento[] = [];
+const eventos: Evento[] = JSON.parse(sessionStorage.getItem("eventos") ?? "[]");
 
 export function registrarEvento(tipo: string) {
   eventos.push({ tipo, t: new Date().toISOString() });
