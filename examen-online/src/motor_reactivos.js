@@ -1,0 +1,229 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+// =========================================================================
+// 1. MODELO DE DATOS (El caché inmutable - Flyweight)
+// =========================================================================
+class Opcion {
+    String texto;
+    boolean esCorrecta;
+    public Opcion(String texto, boolean esCorrecta) {
+        this.texto = texto; this.esCorrecta = esCorrecta;
+    }
+}
+
+class Pregunta {
+    String enunciado;
+    List<Opcion> opcionesBase;
+    public Pregunta(String enunciado, List<Opcion> opciones) {
+        this.enunciado = enunciado; this.opcionesBase = opciones;
+    }
+}
+
+class SeccionMateria {
+    String nombreMateria;
+    List<Pregunta> preguntas;
+    public SeccionMateria(String nombre, List<Pregunta> preguntas) {
+        this.nombreMateria = nombre; this.preguntas = preguntas;
+    }
+}
+
+class ExamenBase {
+    String area;
+    String tipo;
+    List<SeccionMateria> secciones;
+    public ExamenBase(String area, String tipo, List<SeccionMateria> secciones) {
+        this.area = area; this.tipo = tipo; this.secciones = secciones;
+    }
+}
+
+// =========================================================================
+// 2. MOTOR DE PERMUTACIÓN Y EXPORTACIÓN LATEX
+// =========================================================================
+class GeneradorExamenUNAM {
+    public static void procesarAspirante(int folioAspirante, ExamenBase examenMaestro) {
+        Random random = new Random(folioAspirante);
+        StringBuilder latex = new StringBuilder();
+        StringBuilder clave = new StringBuilder();
+
+        latex.append("\\documentclass[12pt]{article}\n")
+             .append("\\usepackage[utf8]{inputenc}\n")
+             .append("\\usepackage{amsmath}\n") 
+             .append("\\begin{document}\n")
+             .append("\\section*{").append(examenMaestro.area).append(" - ").append(examenMaestro.tipo).append("}\n")
+             .append("Folio Aspirante: \\textbf{").append(folioAspirante).append("}\n\n");
+
+        int numPregunta = 1;
+        
+        for (SeccionMateria materia : examenMaestro.secciones) {
+            latex.append("\\subsection*{").append(materia.nombreMateria).append("}\n")
+                 .append("\\begin{enumerate}\\setcounter{enumi}{").append(numPregunta - 1).append("}\n");
+            
+            List<Pregunta> preguntasMateria = new ArrayList<>(materia.preguntas);
+            Collections.shuffle(preguntasMateria, random); 
+
+            for (Pregunta p : preguntasMateria) {
+                latex.append("  \\item ").append(p.enunciado).append("\n  \\begin{enumerate}\n");
+                
+                List<Opcion> opciones = new ArrayList<>(p.opcionesBase);
+                Collections.shuffle(opciones, random); 
+
+                for (int i = 0; i < opciones.size(); i++) {
+                    Opcion op = opciones.get(i);
+                    char letra = (char) ('A' + i);
+                    latex.append("    \\item ").append(op.texto).append("\n");
+                    
+                    if (op.esCorrecta) {
+                        clave.append(numPregunta).append("-").append(letra).append("  ");
+                    }
+                }
+                latex.append("  \\end{enumerate}\n\n");
+                numPregunta++;
+            }
+            latex.append("\\end{enumerate}\n\n");
+        }
+        latex.append("\\end{document}\n");
+        
+        System.out.println("-> Generado LaTeX para Folio: " + folioAspirante + " (" + examenMaestro.tipo + ")");
+        System.out.println("   Clave Mapeada: " + clave.toString());
+
+        try {
+            // Guardado relativo a la carpeta donde se ejecuta la terminal
+            String nombreArchivo = "ExamenCompleto_" + folioAspirante + ".tex";
+            FileWriter escritor = new FileWriter(nombreArchivo);
+            escritor.write(latex.toString());
+            escritor.close();
+        } catch (IOException e) {
+            System.out.println("   [-] Error al crear el archivo .tex.\n");
+        }
+    }
+}
+
+// =========================================================================
+// 3. CAPA DE ORQUESTACIÓN
+// =========================================================================
+class AdministradorConvocatoria {
+    public static void asignarYGenerarExamenes(List<Integer> folios, String areaObjetivo, Map<String, List<ExamenBase>> baseDatosExamenes) {
+        List<ExamenBase> los4Tipos = baseDatosExamenes.get(areaObjetivo);
+        int contador = 0;
+
+        System.out.println("\n==========================================================");
+        System.out.println("INICIANDO MOTOR: EXÁMENES CON PREGUNTAS DISTINTAS");
+        System.out.println("==========================================================\n");
+
+        for (int folio : folios) {
+            int indiceTipo = contador % 4; // Distribución cíclica (A, B, C, D)
+            ExamenBase examenAsignado = los4Tipos.get(indiceTipo);
+            GeneradorExamenUNAM.procesarAspirante(folio, examenAsignado);
+            contador++;
+        }
+        System.out.println("\n[+] Todos los archivos .tex han sido generados con éxito en esta carpeta.");
+    }
+}
+
+// =========================================================================
+// 4. CLASE PRINCIPAL Y CARGA DE DATOS SEPARADA
+// =========================================================================
+public class SistemaExamenesUNAM {
+
+    public static void main(String[] args) {
+        Map<String, List<ExamenBase>> baseDatos = new HashMap<>();
+        
+        // Se cargan a la RAM los 4 tipos de exámenes, cada uno con preguntas distintas
+        List<ExamenBase> tiposExamen = Arrays.asList(
+            crearTipoA(), crearTipoB(), crearTipoC(), crearTipoD()
+        );
+        baseDatos.put("MAC-UNAM", tiposExamen);
+
+        // Simulamos 8 aspirantes
+        List<Integer> aspirantes = Arrays.asList(
+            2026001, 2026002, 2026003, 2026004, 
+            2026005, 2026006, 2026007, 2026008
+        );
+
+        AdministradorConvocatoria.asignarYGenerarExamenes(aspirantes, "MAC-UNAM", baseDatos);
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTRUCTOR EXAMEN TIPO A
+    // -------------------------------------------------------------------------
+    private static ExamenBase crearTipoA() {
+        SeccionMateria secMates = new SeccionMateria("Físico-Matemáticas y Computación", Arrays.asList(
+            new Pregunta("¿Qué estructura de datos basada en el principio LIFO (Last In, First Out) es fundamental para resolver algorítmicamente el problema de las Torres de Hanói?", Arrays.asList(
+                new Opcion("Pila (Stack)", true), new Opcion("Cola (Queue)", false), 
+                new Opcion("Árbol Binario", false), new Opcion("Lista Enlazada", false)
+            ))
+        ));
+        SeccionMateria secLit = new SeccionMateria("Humanidades y Literatura", Arrays.asList(
+            new Pregunta("¿Qué autora escribió la novela gótica considerada pionera de la ciencia ficción, protagonizada por un científico que da vida a una criatura artificial?", Arrays.asList(
+                new Opcion("Mary Shelley", true), new Opcion("Jane Austen", false), 
+                new Opcion("Emily Brontë", false), new Opcion("Agatha Christie", false)
+            ))
+        ));
+        return new ExamenBase("Examen de Admisión UNAM", "Tipo A", Arrays.asList(secMates, secLit));
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTRUCTOR EXAMEN TIPO B
+    // -------------------------------------------------------------------------
+    private static ExamenBase crearTipoB() {
+        SeccionMateria secMates = new SeccionMateria("Físico-Matemáticas y Computación", Arrays.asList(
+            new Pregunta("En Teoría de Grafos, ¿qué algoritmo de enfoque goloso (greedy) se utiliza para encontrar el árbol recubridor mínimo (Minimum Spanning Tree) ordenando las aristas por su peso?", Arrays.asList(
+                new Opcion("Algoritmo de Kruskal", true), new Opcion("Algoritmo de Dijkstra", false), 
+                new Opcion("Búsqueda en Amplitud (BFS)", false), new Opcion("Algoritmo de Floyd-Warshall", false)
+            ))
+        ));
+        SeccionMateria secLit = new SeccionMateria("Humanidades y Literatura", Arrays.asList(
+            new Pregunta("Autor contemporáneo estadounidense conocido por diseñar sistemas de magia dura y estructurada en novelas de alta fantasía como la saga 'Nacidos de la Bruma' (Mistborn):", Arrays.asList(
+                new Opcion("Brandon Sanderson", true), new Opcion("George R.R. Martin", false), 
+                new Opcion("J.R.R. Tolkien", false), new Opcion("Patrick Rothfuss", false)
+            ))
+        ));
+        return new ExamenBase("Examen de Admisión UNAM", "Tipo B", Arrays.asList(secMates, secLit));
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTRUCTOR EXAMEN TIPO C
+    // -------------------------------------------------------------------------
+    private static ExamenBase crearTipoC() {
+        SeccionMateria secMates = new SeccionMateria("Físico-Matemáticas y Computación", Arrays.asList(
+            new Pregunta("¿Qué método matemático y numérico se utiliza para realizar una interpolación suavizada por tramos a partir de un conjunto de puntos, comúnmente usado para simular trayectorias en animación 2D?", Arrays.asList(
+                new Opcion("Splines cúbicos", true), new Opcion("Regresión lineal", false), 
+                new Opcion("Series de Fourier", false), new Opcion("Interpolación de Lagrange", false)
+            ))
+        ));
+        SeccionMateria secLit = new SeccionMateria("Humanidades y Literatura", Arrays.asList(
+            new Pregunta("Poema épico griego atribuido a Homero que narra los eventos del asedio a la ciudad de Troya:", Arrays.asList(
+                new Opcion("La Ilíada", true), new Opcion("La Odisea", false), 
+                new Opcion("La Eneida", false), new Opcion("Edipo Rey", false)
+            ))
+        ));
+        return new ExamenBase("Examen de Admisión UNAM", "Tipo C", Arrays.asList(secMates, secLit));
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTRUCTOR EXAMEN TIPO D
+    // -------------------------------------------------------------------------
+    private static ExamenBase crearTipoD() {
+        SeccionMateria secMates = new SeccionMateria("Físico-Matemáticas y Computación", Arrays.asList(
+            new Pregunta("Dada la secuencia de grados de los vértices de un grafo, ¿qué teorema algorítmico permite determinar matemáticamente si existe un grafo simple que cumpla con dicha secuencia?", Arrays.asList(
+                new Opcion("Teorema de Havel-Hakimi", true), new Opcion("Teorema de Euler", false), 
+                new Opcion("Teorema de Kuratowski", false), new Opcion("Lema del apretón de manos", false)
+            ))
+        ));
+        SeccionMateria secLit = new SeccionMateria("Humanidades y Literatura", Arrays.asList(
+            new Pregunta("Considerada la obra cumbre de la literatura en español, escrita por Miguel de Cervantes y publicada a principios del siglo XVII:", Arrays.asList(
+                new Opcion("Don Quijote de la Mancha", true), new Opcion("Cien años de soledad", false), 
+                new Opcion("El lazarillo de Tormes", false), new Opcion("La Celestina", false)
+            ))
+        ));
+        return new ExamenBase("Examen de Admisión UNAM", "Tipo D", Arrays.asList(secMates, secLit));
+    }
+}
