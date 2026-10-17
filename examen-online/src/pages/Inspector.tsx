@@ -7,7 +7,8 @@ interface Alumno extends MensajeEstado {
   simulado?: boolean;
 }
 
-const GRUPO = 25;
+const CAPACIDAD = 25;
+const MI_GRUPO = 1; // DEMO: en producción, el grupo que el backend asignó a este supervisor
 
 const ORDEN: Record<Estado, number> = {
   bloqueado: 0,
@@ -28,7 +29,7 @@ const ETIQUETA: Record<Estado, string> = {
 function simular(): Record<string, Alumno> {
   const estados: Estado[] = ["en_examen", "en_examen", "en_examen", "en_examen", "bloqueado", "autorizado"];
   const out: Record<string, Alumno> = {};
-  for (let i = 1; i <= GRUPO; i++) {
+  for (let i = 1; i <= CAPACIDAD; i++) {
     const id = `aspirante${String(i).padStart(2, "0")}`;
     const estado = estados[Math.floor(Math.random() * estados.length)];
     out[id] = {
@@ -40,6 +41,7 @@ function simular(): Record<string, Alumno> {
       respondidas: Math.floor(Math.random() * 120),
       motivo: estado === "bloqueado" ? "cambio_de_pestana" : "",
       eventos: estado === "bloqueado" ? [{ tipo: "cambio_de_pestana", t: new Date().toISOString() }] : [],
+      grupoSupervisionId: MI_GRUPO,
       t: new Date().toISOString(),
       visto: Date.now(),
       simulado: true,
@@ -85,8 +87,9 @@ export default function Inspector() {
   }
 
   const todos = Object.values(alumnos);
-  const conteo = (e: Estado) => todos.filter((a) => a.estado === e).length;
-  const lista = todos
+  const deMiGrupo = todos.filter((a) => a.grupoSupervisionId === MI_GRUPO);
+  const conteo = (e: Estado) => deMiGrupo.filter((a) => a.estado === e).length;
+  const lista = deMiGrupo
     .filter((a) => !soloAlertas || a.estado === "bloqueado" || sinSenal(a))
     .sort((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || a.nombre.localeCompare(b.nombre));
   const elegido = seleccion ? alumnos[seleccion] : undefined;
@@ -95,14 +98,14 @@ export default function Inspector() {
     <main className="inspector">
       <div className="insp-cab">
         <h1>Panel del inspector</h1>
-        <span>Grupo: {todos.length} / {GRUPO} aspirantes</span>
+        <span>Grupo {MI_GRUPO}: {deMiGrupo.length} / {CAPACIDAD} aspirantes</span>
       </div>
 
       <div className="resumen">
         <span>🔴 Bloqueados: {conteo("bloqueado")}</span>
         <span>🟠 Autorizados: {conteo("autorizado")}</span>
         <span>🟢 En examen: {conteo("en_examen")}</span>
-        <span>⚠ Sin señal: {todos.filter(sinSenal).length}</span>
+        <span>⚠ Sin señal: {deMiGrupo.filter(sinSenal).length}</span>
         <label>
           <input
             type="checkbox"

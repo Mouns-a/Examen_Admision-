@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { generarExamen } from "../services/examen";
+import { obtenerExamenConfig } from "../services/examenConfig";
+import { obtenerGrupoSupervision } from "../services/grupos";
 import { detenerStream, obtenerStream, obtenerPantalla } from "../services/media";
 import { cargarProgreso, guardarProgreso, borrarProgreso } from "../services/progreso";
 import { registrarEvento, obtenerEventos } from "../services/eventos";
@@ -13,8 +15,6 @@ import { useVigilancia } from "../hooks/useVigilancia";
 import { useReloj } from "../hooks/useReloj";
 import { useMiniatura } from "../hooks/useMiniatura";
 
-const TOTAL = 120;
-const DURACION = 3 * 3600; // segundos
 
 const formato = (s: number) => {
   const h = Math.floor(s / 3600);
@@ -25,6 +25,10 @@ const formato = (s: number) => {
 function ExamenPantalla() {
   const navigate = useNavigate();
   const nombre = obtenerSesion()?.nombre ?? "alumno";
+    const [config] = useState(() => obtenerExamenConfig());
+  const TOTAL = config.totalPreguntas;
+  const DURACION = config.duracionMinutos * 60;
+  const grupoSupervisionId = obtenerGrupoSupervision(nombre);
   const [guardado] = useState(() => cargarProgreso(nombre));
   const [examen] = useState(() => guardado?.examen ?? generarExamen(TOTAL));
   const [actual, setActual] = useState(guardado?.actual ?? 0);
@@ -65,6 +69,7 @@ function ExamenPantalla() {
       estado: estadoForzado ?? info.current.estado,
       eventos: obtenerEventos().slice(-10),
       miniatura: miniatura.current,
+      grupoSupervisionId,
       t: new Date().toISOString(),
     });
   }

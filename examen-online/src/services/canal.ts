@@ -13,6 +13,7 @@ export interface MensajeEstado {
   motivo: string;
   eventos: Evento[];
   miniatura?: string;
+  grupoSupervisionId: number;
   t: string;
 }
 
